@@ -57,10 +57,15 @@ fun main(args : Array<String>) {
     }
     Spark.notFound { _, res -> res.status(404); """{"error": "not_found"}""" }
 
-    Spark.path("/:id", {
+    Spark.path("/:id") {
         //VIEW FILE
-        Spark.head("", { req, res ->
-            val id = req.params(":id").toString()
+        Spark.head("") { req, res ->
+            var id = req.params(":id").toString()
+            if (id.contains('.')) {
+                //REMOVE ENDINGS LIKE .gif
+                val splitted = id.split(".")
+                id = splitted[0]
+            }
             logger.info("Requested headers for image: $id")
             val header = getHeader(id, headerColl)
             if (header == null) {
@@ -75,10 +80,15 @@ fun main(args : Array<String>) {
             res.header("Cache-Control", "no-cache")
             res.raw().setHeader("Date", Date(header.uploadedAt).toGMTString())
             """{"error": "null"}"""
-        })
+        }
 
-        Spark.get("", { req, res ->
-            val id = req.params(":id").toString()
+        Spark.get("") { req, res ->
+            var id = req.params(":id").toString()
+            if (id.contains('.')) {
+                //REMOVE ENDINGS LIKE .gif
+                val splitted = id.split(".")
+                id = splitted[0]
+            }
             logger.info("Requested image: $id")
             val header = getHeader(id, headerColl)
             if (header == null) {
@@ -112,9 +122,9 @@ fun main(args : Array<String>) {
             res.raw().setHeader("Date", Date(header.uploadedAt).toGMTString())
 
             bytes
-        })
+        }
         //DELETE FILE
-        Spark.get("/d/:dkey", { req, res ->
+        Spark.get("/d/:dkey") { req, res ->
             val id = req.params(":id").toString()
             val dkey = req.params(":dkey").toString()
             val header = getHeader(id, headerColl)
@@ -134,10 +144,10 @@ fun main(args : Array<String>) {
             }.start()
             logger.info("Deleted file: $id")
             """{"error": "null"}"""
-        })
-    })
+        }
+    }
     //UPLOAD FILE
-    Spark.post("/u", { req, res ->
+    Spark.post("/u") { req, res ->
         if (req.headers("Auth") != configObj.uploadPw) {
             res.status(401)
             return@post """{"error": "unauthorized"}"""
@@ -185,7 +195,6 @@ fun main(args : Array<String>) {
         val deleteKey = RandomStringUtils.random(16, true, true)
         val neededChunks = Math.ceil(byteArr.size / configObj.splitSizeInBytes.toDouble())
         val chunks = mutableListOf<ChunkDoc>()
-
         var byteIndex = 0
         for (i in 0 until byteArr.size step configObj.splitSizeInBytes) {
             var end = i + configObj.splitSizeInBytes
@@ -205,7 +214,7 @@ fun main(args : Array<String>) {
 
         logger.info("Uploaded file: $newId with a size of: ${byteArr.size} bytes!")
         """{"error": "null", "id": "$newId", "delete_key": "$deleteKey"}"""
-    })
+    }
 
     logger.info("Server started!")
 }
