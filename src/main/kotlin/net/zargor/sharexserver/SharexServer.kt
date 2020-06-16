@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory
 import spark.Spark
 import java.io.ByteArrayOutputStream
 import java.util.*
-import javax.activation.MimeType
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
@@ -211,7 +210,7 @@ fun main(args : Array<String>) {
         else
             "." + contentType.fileExtensions[0]
 
-        val header = HeaderDoc(newId, deleteKey, mimeType, byteArr.size, Date().time, type, neededChunks.roundToInt())
+        val header = HeaderDoc(newId, deleteKey, mimeType, byteArr.size, Date().time, neededChunks.roundToInt())
         insertHeader(header, headerColl)
         insertAllChunks(chunks, chunkColl)
 
