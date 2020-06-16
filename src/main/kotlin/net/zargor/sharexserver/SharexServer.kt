@@ -23,6 +23,8 @@ import org.slf4j.LoggerFactory
 import spark.Spark
 import java.io.ByteArrayOutputStream
 import java.util.*
+import javax.activation.MimeType
+import kotlin.math.ceil
 import kotlin.math.roundToInt
 
 val logger = LoggerFactory.getLogger("ShareXServer")
@@ -183,17 +185,13 @@ fun main(args : Array<String>) {
             return@post """{"error": "file_type_unknown"}"""
         }
 
-        if (!contentType.mimeType.startsWith("image")) {
-            res.status(406)
-            return@post """{"error": "invalid_file_type"}"""
-        }
         val mimeType = contentType.mimeType
         var newId : String
         do
             newId = RandomStringUtils.random(ID_LENGTH, true, true)
         while (getHeader(newId, headerColl) != null)
         val deleteKey = RandomStringUtils.random(16, true, true)
-        val neededChunks = Math.ceil(byteArr.size / configObj.splitSizeInBytes.toDouble())
+        val neededChunks = ceil(byteArr.size / configObj.splitSizeInBytes.toDouble())
         val chunks = mutableListOf<ChunkDoc>()
         var byteIndex = 0
         for (i in 0 until byteArr.size step configObj.splitSizeInBytes) {
@@ -207,13 +205,18 @@ fun main(args : Array<String>) {
             }
             chunks.add(ChunkDoc(newId, chunks.size + 1, arr))
         }
-        val header = HeaderDoc(newId, deleteKey, mimeType, byteArr.size, Date().time, neededChunks.roundToInt())
+
+        val type = if(contentType.fileExtensions == null)
+            ""
+        else
+            "." + contentType.fileExtensions[0]
+
+        val header = HeaderDoc(newId, deleteKey, mimeType, byteArr.size, Date().time, type, neededChunks.roundToInt())
         insertHeader(header, headerColl)
         insertAllChunks(chunks, chunkColl)
 
-
-        logger.info("Uploaded file: $newId with a size of: ${byteArr.size} bytes!")
-        """{"error": "null", "id": "$newId", "delete_key": "$deleteKey"}"""
+        logger.info("Uploaded file: $newId with a size of: ${byteArr.size} bytes and type of $type!")
+        """{"error": "null", "id": "$newId", "delete_key": "$deleteKey", "type": "$type"}"""
     }
 
     logger.info("Server started!")
