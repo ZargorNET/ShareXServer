@@ -1,7 +1,6 @@
 package net.zargor.sharexserver
 
 import com.google.gson.annotations.SerializedName
-import org.bson.BsonBinary
 import java.util.*
 
 data class HeaderDoc(
@@ -10,9 +9,8 @@ data class HeaderDoc(
         @field:SerializedName("content_type") val contentType : String,
         @field:SerializedName("content_length") val contentLength : Int,
         @field:SerializedName("uploaded_at") val uploadedAt : Long,
-        @field:SerializedName("type") val type : String,
         @field:SerializedName("total_chunks") val totalChunks : Int
-);
+)
 
 data class ChunkDoc(
         @field:SerializedName("parent_id") val parentId : String,
